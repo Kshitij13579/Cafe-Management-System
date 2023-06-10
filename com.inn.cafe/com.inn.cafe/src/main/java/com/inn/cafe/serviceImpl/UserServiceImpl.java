@@ -6,10 +6,17 @@ import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import com.inn.cafe.constants.CafeConstants;
 import com.inn.cafe.dao.UserDao;
+import com.inn.cafe.jwt.CustomerUserDetailsService;
+import com.inn.cafe.jwt.JwtFilter;
+import com.inn.cafe.jwt.JwtUtil;
 import com.inn.cafe.pojo.User;
 import com.inn.cafe.service.UserService;
 import com.inn.cafe.utils.CafeUtils;
@@ -22,6 +29,15 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	UserDao userDao;
+	
+	@Autowired
+	AuthenticationManager authenticationManager;
+	
+	@Autowired
+	CustomerUserDetailsService customerUserDetailsService;
+	
+	@Autowired
+	JwtUtil jwtUtil;
 	
 	@Override
 	public ResponseEntity<String> signUp(Map<String, String> requestMap) {
@@ -72,6 +88,32 @@ public class UserServiceImpl implements UserService {
 		user.setRole("user");
 		
 		return user;
+	}
+
+	@Override
+	public ResponseEntity<String> login(Map<String, String> requestMap) {
+		log.info("Inside login");
+		
+		try {
+			Authentication auth = authenticationManager.authenticate(
+						new UsernamePasswordAuthenticationToken(requestMap.get("email"), requestMap.get("password"))
+					);
+			
+			if(auth.isAuthenticated()) {
+				if(customerUserDetailsService.getUserDetail().getStatus().equalsIgnoreCase("true")) {
+					return new ResponseEntity<String>("{\"token\":\""+
+								jwtUtil.generateToken(customerUserDetailsService.getUserDetail().getEmail(), customerUserDetailsService.getUserDetail().getRole())+"\"}",HttpStatus.OK);
+				}else {
+					return CafeUtils.getResponseEntity("Wait for Admin Approval",HttpStatus.BAD_REQUEST);
+				}
+			}
+			
+		}catch(Exception ex) {
+			log.error("{}",ex);
+		}
+		
+		return CafeUtils.getResponseEntity(CafeConstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+		
 	}
 
 }
