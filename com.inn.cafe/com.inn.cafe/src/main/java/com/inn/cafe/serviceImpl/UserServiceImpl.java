@@ -118,6 +118,8 @@ public class UserServiceImpl implements UserService {
 				}else {
 					return CafeUtils.getResponseEntity("Wait for Admin Approval",HttpStatus.BAD_REQUEST);
 				}
+			}else {
+				return CafeUtils.getResponseEntity("Incorrect User Name or Password",HttpStatus.BAD_REQUEST);
 			}
 			
 		}catch(Exception ex) {

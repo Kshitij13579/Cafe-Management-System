@@ -3,6 +3,7 @@ export class GlobalConstants{
     //Message
     public static generiError: string = "Something went worng. Please try again later";
 
+    public static unathorized:string = "You are not authorized person to access this page.";
     //Regex
     public static nameRegex:string = "[a-zA-Z0-9 ]*";
 
